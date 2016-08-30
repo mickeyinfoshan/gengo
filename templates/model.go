@@ -10,11 +10,12 @@ type {{.Name}} {{.Type}} {
 }
 
 {{$instance := .GetInstanceName}}
+{{$IDField := .GetIDField}}
 
 // Delete Delete {{.Name}} from database
 func ({{$instance}} *{{.Name}}) Delete() error {
     sess := NewDBSession()
     defer sess.Close()
-    err := db(dbName).C(collectionNames["{{.Name}}"]).RemoveId({{$instance}}.{{IDField.Name}})
+    err := db(dbName).C(collectionNames["{{.Name}}"]).RemoveId({{$instance}}.{{$IDField.Name}})
     return err
 }`
