@@ -1,6 +1,9 @@
 package meta
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -19,7 +22,7 @@ func TestFieldFromString(t *testing.T) {
 		So(field.IsID(), ShouldBeFalse)
 		So(field.Tags["json"], ShouldEqual, "Name")
 		So(field.Tags["bson"], ShouldEqual, "Name")
-		So(field.ToCode(), ShouldEqual, "Name\tstring\t`json:\"Name\"\tbson:\"Name\"`")
+		So(field.ToCode(), ShouldEqual, "Name\tstring\t`bson:\"Name\"\tjson:\"Name\"`")
 	})
 
 	Convey("不使用默认tags", t, func() {
@@ -31,7 +34,7 @@ func TestFieldFromString(t *testing.T) {
 		So(field.IsID(), ShouldBeFalse)
 		So(field.Tags["json"], ShouldEqual, "-")
 		So(field.Tags["bson"], ShouldEqual, "createtime,omitempty")
-		So(field.ToCode(), ShouldEqual, "Age\tint\t`json:\"-\"\tbson:\"createtime,omitempty\"`")
+		So(field.ToCode(), ShouldEqual, "Age\tint\t`bson:\"createtime,omitempty\"\tjson:\"-\"`")
 	})
 
 	Convey("不使用默认tags，ID", t, func() {
@@ -43,5 +46,40 @@ func TestFieldFromString(t *testing.T) {
 		So(field.IsID(), ShouldBeTrue)
 		So(field.Tags["json"], ShouldEqual, "Aid")
 		So(field.Tags["bson"], ShouldEqual, "_id,omitempty")
+	})
+}
+
+func TestModelMetaFromString(t *testing.T) {
+	pwd, _ := os.Getwd()
+
+	Convey("测试解析器，有ID属性", t, func() {
+		testfileBytes, err := ioutil.ReadFile(pwd + "/../tests/case1.idl")
+		if err != nil {
+			panic(err)
+		}
+		testFileStr := string(testfileBytes)
+		modelMeta, e := ModelMetaFromString(testFileStr)
+		So(e, ShouldBeNil)
+		So(modelMeta.Name, ShouldEqual, "Auth")
+		So(modelMeta.Type, ShouldEqual, "struct")
+		So(len(modelMeta.Fields), ShouldEqual, 11)
+		So(modelMeta.GetInstanceName(), ShouldEqual, "auth")
+	})
+
+	Convey("测试解析器，没有ID属性", t, func() {
+		testfileBytes, err := ioutil.ReadFile(pwd + "/../tests/case2.idl")
+		if err != nil {
+			panic(err)
+		}
+		testFileStr := string(testfileBytes)
+		modelMeta, e := ModelMetaFromString(testFileStr)
+		So(e, ShouldBeNil)
+		So(modelMeta.Name, ShouldEqual, "Auth")
+		So(modelMeta.Type, ShouldEqual, "struct")
+		So(len(modelMeta.Fields), ShouldEqual, 11)
+		So(modelMeta.HasIDField(), ShouldBeTrue)
+		So(modelMeta.GetInstanceName(), ShouldEqual, "auth")
+
+		fmt.Println(modelMeta.GenCode())
 	})
 }

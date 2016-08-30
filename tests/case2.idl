@@ -1,0 +1,15 @@
+type Auth struct {
+
+	Fromuid    bson.ObjectId `json:"-" bson:"fromuid,omitempty"`
+	Touid      bson.ObjectId `json:"uid" bson:"touid,omitempty"`
+	Lid        bson.ObjectId `json:"-"  bson:"lid,omitempty"`
+	Starttime  int64         `json:"starttime"  bson:"starttime,omitempty"`
+	Endtime    int64         `json:"endtime"  bson:"endtime,omitempty"`
+	Count      int           `json:"count"  bson:"count,omitempty"`
+	Total      int           `json:"total"  bson:"total,omitempty"`
+	Createtime int64         `json:"-"  bson:"createtime,omitempty"`
+
+
+	Heep     int    `json:"heep" bson:"heep,omitempty"`
+	Password string `json:"-" bson:"-"`
+}
