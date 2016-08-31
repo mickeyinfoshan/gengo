@@ -1,0 +1,48 @@
+// model Auth
+type Auth struct {
+    
+        AuthID	bson.ObjectId	`bson:"_id,omitempty"	json:"AuthID"`
+    
+        Createtime	int64	`bson:"createtime,omitempty"	json:"-"`
+    
+        Count	int	`bson:"count,omitempty"	json:"count"`
+    
+        Endtime	int64	`bson:"endtime,omitempty"	json:"endtime"`
+    
+        Fromuid	bson.ObjectId	`bson:"fromuid,omitempty"	gen:"filter"	json:"-"`
+    
+        Heep	int	`bson:"heep,omitempty"	json:"heep"`
+    
+        Lid	bson.ObjectId	`bson:"lid,omitempty"	gen:"upsert"	json:"-"`
+    
+        Password	string	`bson:"-"	json:"-"`
+    
+        Starttime	int64	`bson:"starttime,omitempty"	json:"starttime"`
+    
+        Total	int	`bson:"total,omitempty"	json:"total"`
+    
+        Touid	bson.ObjectId	`bson:"touid,omitempty"	gen:"upsert,filter,omitempty"	json:"uid"`
+    
+}
+
+
+
+
+// Delete Delete Auth from database
+func (auth *Auth) Delete() error {
+    sess := NewDBSession()
+    defer sess.Close()
+    err := sess.DB(dbName).C(collectionNames["Auth"]).RemoveId(auth.AuthID)
+    return err
+}
+
+// Save Save Auth to database
+func (auth *Auth) Save() error {
+    sess := NewDBSession()
+    defer sess.Close()
+    info, err := sess.DB(dbName).C(collectionNames["Auth"]).Upsert(bson.M{"lid" : auth.Lid,"touid" : auth.Touid}, *auth)
+    if info.UpsertedId != nil {
+        auth.AuthID = info.UpsertedId.(bson.ObjectId)
+    }
+    return err
+}

@@ -13,94 +13,6 @@ import (
 	"github.com/mickeyinfoshan/gengo/templates"
 )
 
-// Field 结构体属性
-type Field struct {
-	Name string
-	Type string
-	Tags map[string]string
-}
-
-func (field *Field) IsID() bool {
-	bsonTag, bsonDeclared := field.Tags["bson"]
-	if !bsonDeclared {
-		return false
-	}
-	return strings.Contains(bsonTag, "_id")
-}
-
-// ToCode 生成代码
-func (field *Field) ToCode() string {
-	codeTemplate := "%s\t%s\t"
-	code := fmt.Sprintf(codeTemplate, field.Name, field.Type)
-	tagStrings := []string{}
-	for key, val := range field.Tags {
-		if key == "" {
-			continue
-		}
-		tagString := fmt.Sprintf("%s:\"%s\"", key, val)
-		tagStrings = append(tagStrings, tagString)
-	}
-	sort.Sort(ByFirstLetter(tagStrings))
-	tagsString := strings.Join(tagStrings, "\t")
-	tagsString = fmt.Sprintf("`%s`", tagsString)
-	code = code + tagsString
-	return code
-}
-
-type ByFirstLetter []string
-
-func (a ByFirstLetter) Len() int           { return len(a) }
-func (a ByFirstLetter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByFirstLetter) Less(i, j int) bool { return a[i][0] < a[j][0] }
-
-// FieldFromString 根据属性字符串生成属性对象
-func FieldFromString(str string) (Field, error) {
-	field := Field{}
-	field.Tags = map[string]string{}
-	str = strings.TrimSpace(str)
-	re := regexp.MustCompile("\\s+")
-
-	spaceLocation := re.FindStringIndex(str)
-	if spaceLocation == nil {
-		return field, errors.New("syntax error around: " + str)
-	}
-	field.Name = str[:spaceLocation[0]]
-	str = str[spaceLocation[1]:]
-
-	spaceLocation = re.FindStringIndex(str)
-	if spaceLocation == nil {
-		field.Type = str
-		str = ""
-	} else {
-		field.Type = str[:spaceLocation[0]]
-		str = str[spaceLocation[1]:]
-	}
-
-	tagsString := str
-	tagsString = strings.Trim(tagsString, "`")
-	tagStrings := RegSplit(tagsString, "\\s+")
-	for _, tagString := range tagStrings {
-		tag := strings.Split(tagString, ":")
-		if len(tag) < 2 {
-			tag = append(tag, "")
-		}
-		tagName := tag[0]
-		tagValue := strings.Trim(tag[1], "\"")
-		field.Tags[tagName] = tagValue
-	}
-	defaultTagNames := []string{
-		"json",
-		"bson",
-	}
-	for _, defaultTagName := range defaultTagNames {
-		_, declared := field.Tags[defaultTagName]
-		if declared == false {
-			field.Tags[defaultTagName] = field.Name
-		}
-	}
-	return field, nil
-}
-
 // 根据名字排序
 type ByName []Field
 
@@ -189,7 +101,7 @@ func (modelMeta *ModelMeta) GetInstanceName() string {
 	return instanceName
 }
 
-func (modelMeta *ModelMeta) GenCode() string {
+func (modelMeta *ModelMeta) GenModelCode() string {
 	t := template.Must(template.New("model").Parse(templates.ModelTmpl))
 	var doc bytes.Buffer
 	err := t.Execute(&doc, modelMeta)
@@ -197,6 +109,73 @@ func (modelMeta *ModelMeta) GenCode() string {
 		return "error " + modelMeta.Name
 	}
 	return doc.String()
+}
+
+func (modelMeta *ModelMeta) GetUpsertFields() []Field {
+	fields := FilterFieldsByTags(modelMeta.Fields, codeGenerationTag, upsertNote)
+	if len(fields) == 0 {
+		IDField, _ := modelMeta.GetIDField()
+		fields = append(fields, IDField)
+	}
+	return fields
+}
+
+func (modelMeta *ModelMeta) GenUpsertSelector() string {
+	fields := modelMeta.GetUpsertFields()
+	instanceName := modelMeta.GetInstanceName()
+	fieldStrings := []string{}
+	for _, field := range fields {
+		fieldStrings = append(fieldStrings, field.GenBsonMPair(instanceName))
+	}
+	return fmt.Sprintf("bson.M{%s}", strings.Join(fieldStrings, ","))
+}
+
+// MakeSelectorMeta Make a selectorMeta from a modelMeta
+func (modelMeta *ModelMeta) MakeSelectorMeta() SelectorMeta {
+	selectorMeta := SelectorMeta{
+		NoneOmitEmptyFields: []Field{},
+		OmitEmptyFields:     []Field{},
+	}
+	selectorMeta.ModelMeta = modelMeta
+	filterFields := FilterFieldsByTags(modelMeta.Fields, codeGenerationTag, filterNote)
+	for _, field := range filterFields {
+		tag := field.Tags[codeGenerationTag]
+		if strings.Contains(tag, "omitempty") {
+			selectorMeta.OmitEmptyFields = append(selectorMeta.OmitEmptyFields, field)
+		} else {
+			selectorMeta.NoneOmitEmptyFields = append(selectorMeta.NoneOmitEmptyFields, field)
+		}
+	}
+	return selectorMeta
+}
+
+func (modelMeta *ModelMeta) GenSeletorCode() string {
+	selectorMeta := modelMeta.MakeSelectorMeta()
+	codeGenerated := selectorMeta.genCode()
+	return codeGenerated
+}
+
+func (modelMeta *ModelMeta) GenFileCode(packageName string) string {
+	modelFile := ModelFile{
+		ModelMeta:   modelMeta,
+		PackageName: packageName,
+	}
+	codeGenerated := modelFile.GenCode()
+	return codeGenerated
+}
+
+func FilterFieldsByTags(fieldsToFilter []Field, tagName, tagSubString string) []Field {
+	var fields []Field
+	for _, field := range fieldsToFilter {
+		tag, hasTag := field.Tags[tagName]
+		if !hasTag {
+			continue
+		}
+		if strings.Contains(tag, tagSubString) {
+			fields = append(fields, field)
+		}
+	}
+	return fields
 }
 
 // RegSplit 使用正则表达式分割字符串
@@ -211,4 +190,19 @@ func RegSplit(text string, delimeter string) []string {
 	}
 	result[len(indexes)] = text[laststart:len(text)]
 	return result
+}
+
+type ModelFile struct {
+	PackageName string
+	ModelMeta   *ModelMeta
+}
+
+func (modelFile *ModelFile) GenCode() string {
+	t := template.Must(template.New("modelFile").Parse(templates.ModelFileTmpl))
+	var doc bytes.Buffer
+	err := t.Execute(&doc, modelFile)
+	if err != nil {
+		return "error " + modelFile.ModelMeta.Name
+	}
+	return doc.String()
 }

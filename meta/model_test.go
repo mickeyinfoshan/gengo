@@ -1,9 +1,9 @@
 package meta
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -71,7 +71,14 @@ func TestModelMetaFromString(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		resultBytes, err := ioutil.ReadFile(pwd + "/../tests/case2Model.go.generated")
+		if err != nil {
+			panic(err)
+		}
 		testFileStr := string(testfileBytes)
+		resultCode := string(resultBytes)
+		resultCode = strings.TrimSpace(resultCode)
+		resultCode = strings.Trim(resultCode, "\n")
 		modelMeta, e := ModelMetaFromString(testFileStr)
 		So(e, ShouldBeNil)
 		So(modelMeta.Name, ShouldEqual, "Auth")
@@ -80,6 +87,10 @@ func TestModelMetaFromString(t *testing.T) {
 		So(modelMeta.HasIDField(), ShouldBeTrue)
 		So(modelMeta.GetInstanceName(), ShouldEqual, "auth")
 
-		fmt.Println(modelMeta.GenCode())
+		generatedCode := modelMeta.GenModelCode()
+		generatedCode = strings.Trim(generatedCode, "\n")
+		generatedCode = strings.TrimSpace(generatedCode)
+
+		So(generatedCode, ShouldEqual, resultCode)
 	})
 }

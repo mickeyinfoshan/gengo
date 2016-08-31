@@ -1,7 +1,9 @@
 package interfaces
 
 import "gopkg.in/mgo.v2/bson"
+import "gopkg.in/mgo.v2"
 
 type selector interface {
-	GetBsonM() bson.M
+	MakeBsonM() bson.M
+	MakeQuery(*mgo.Session) *mgo.Query
 }

@@ -1,8 +1,8 @@
 type Auth struct {
 
-	Fromuid    bson.ObjectId `json:"-" bson:"fromuid,omitempty"`
-	Touid      bson.ObjectId `json:"uid" bson:"touid,omitempty"`
-	Lid        bson.ObjectId `json:"-"  bson:"lid,omitempty"`
+	Fromuid    bson.ObjectId `json:"-" bson:"fromuid,omitempty" gen:"filter"`
+	Touid      bson.ObjectId `json:"uid" bson:"touid,omitempty" gen:"upsert,filter,omitempty"`
+	Lid        bson.ObjectId `json:"-"  bson:"lid,omitempty"  gen:"upsert"`
 	Starttime  int64         `json:"starttime"  bson:"starttime,omitempty"`
 	Endtime    int64         `json:"endtime"  bson:"endtime,omitempty"`
 	Count      int           `json:"count"  bson:"count,omitempty"`

@@ -1,0 +1,43 @@
+// model Auth's Selector
+type AuthSelector struct {
+    Touid bson.ObjectId
+    Fromuid bson.ObjectId
+}
+
+// MakeBsonM generate a bson.M object from Selector
+func (authSelector *AuthSelector) MakeBsonM() bson.M {
+    bsonM := bson.M{}
+    bsonM["fromuid"] = authSelector.Fromuid
+    
+    var defaultTouid bson.ObjectId
+    if defaultTouid != authSelector.Touid {
+        bsonM["touid"] = authSelector.Touid
+    }
+    
+    return bsonM
+}
+
+// MakeQuery generate a qurey from a Selector
+func (authSelector *AuthSelector) MakeQuery(sess *mgo.Session) *mgo.Query {
+    bsonM := authSelector.MakeBsonM()
+    query := sess.DB(dbName).C(collectionNames["Auth"]).Find(bsonM)
+    return query
+}
+
+// FindOne Get an instance from a AuthSelector
+func (authSelector *AuthSelector) FindOne() (Auth, error) {
+    sess := NewDBSession()
+    defer sess.Close()
+    var auth Auth
+    err := authSelector.MakeQuery(sess).One(&auth)
+    return auth, err
+}
+
+// FindAll Get all instances from a AuthSelector
+func (authSelector *AuthSelector) FindAll() ([]Auth, error) {
+    sess := NewDBSession()
+    defer sess.Close()
+    var auths []Auth
+    err := authSelector.MakeQuery(sess).All(&auths)
+    return auths, err
+}
