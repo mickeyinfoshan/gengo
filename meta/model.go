@@ -34,13 +34,11 @@ func ModelMetaFromString(str string) (ModelMeta, error) {
 	lines := strings.Split(str, "\n")
 	linesLen := len(lines)
 	if linesLen < 2 {
-		fmt.Println("linesLen < 2")
 		return modelMeta, errors.New("syntax error around: " + str)
 	}
 	firstLine := lines[0]
 	splitedFirstLine := RegSplit(firstLine, "\\s+")
 	if len(splitedFirstLine) < 3 {
-		fmt.Println("len(splitedFirstLine) < 3")
 		return modelMeta, errors.New("syntax error around: " + firstLine)
 	}
 	modelMeta.Name = splitedFirstLine[1]
@@ -53,7 +51,6 @@ func ModelMetaFromString(str string) (ModelMeta, error) {
 		}
 		field, err := FieldFromString(fieldLine)
 		if err != nil {
-			fmt.Println("parse field error")
 			return modelMeta, err
 		}
 		modelMeta.Fields = append(modelMeta.Fields, field)

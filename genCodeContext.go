@@ -3,6 +3,7 @@ package gengo
 import (
 	"bytes"
 	"io/ioutil"
+	"os"
 	"text/template"
 
 	"path"
@@ -31,9 +32,26 @@ func (genCodeContext *GenCodeContext) GenInitDBCode() string {
 }
 
 func (genCodeContext *GenCodeContext) WriteCodeToFile(code, fileName string) error {
+	outputDir := path.Join(genCodeContext.OutputPath, genCodeContext.PackageName)
+	if !IsDirExists(outputDir) {
+		mkdirErr := os.Mkdir(outputDir, 0777)
+		if mkdirErr != nil {
+			return mkdirErr
+		}
+	}
 	filePath := path.Join(genCodeContext.OutputPath, genCodeContext.PackageName, fileName)
 	err := ioutil.WriteFile(filePath, []byte(code), 0666)
 	return err
+}
+
+// IsDirExists 判断目录是否存在
+func IsDirExists(path string) bool {
+	fi, err := os.Stat(path)
+
+	if err != nil {
+		return os.IsExist(err)
+	}
+	return fi.IsDir()
 }
 
 func (genCodeContext *GenCodeContext) Execute() error {
