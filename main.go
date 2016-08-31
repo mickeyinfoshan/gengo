@@ -47,7 +47,10 @@ func main() {
 			ModelMetas:   modelMetas,
 		}
 
-		genCodeContext.Execute()
+		e := genCodeContext.Execute()
+		if e != nil {
+			panic(e.Error())
+		}
 	}
 }
 
