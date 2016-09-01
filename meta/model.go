@@ -42,7 +42,7 @@ func ModelMetaFromString(str string) (ModelMeta, error) {
 		return modelMeta, errors.New("syntax error around: " + firstLine)
 	}
 	modelMeta.Name = splitedFirstLine[1]
-	modelMeta.Type = splitedFirstLine[2]
+	modelMeta.Type = strings.Trim(splitedFirstLine[2], "{")
 
 	fieldLines := lines[1 : linesLen-1]
 	for _, fieldLine := range fieldLines {

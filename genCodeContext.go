@@ -32,15 +32,18 @@ func (genCodeContext *GenCodeContext) GenInitDBCode() string {
 }
 
 func (genCodeContext *GenCodeContext) WriteCodeToFile(code, fileName string) error {
+	var err error
+	err = MakeDirIfNotExist(genCodeContext.OutputPath)
+	if err != nil {
+		return err
+	}
 	outputDir := path.Join(genCodeContext.OutputPath, genCodeContext.PackageName)
-	if !IsDirExists(outputDir) {
-		mkdirErr := os.Mkdir(outputDir, 0777)
-		if mkdirErr != nil {
-			return mkdirErr
-		}
+	err = MakeDirIfNotExist(outputDir)
+	if err != nil {
+		return err
 	}
 	filePath := path.Join(genCodeContext.OutputPath, genCodeContext.PackageName, fileName)
-	err := ioutil.WriteFile(filePath, []byte(code), 0666)
+	err = ioutil.WriteFile(filePath, []byte(code), 0666)
 	return err
 }
 
@@ -52,6 +55,15 @@ func IsDirExists(path string) bool {
 		return os.IsExist(err)
 	}
 	return fi.IsDir()
+}
+
+// MakeDirIfNotExist 创建目录如果不存在
+func MakeDirIfNotExist(path string) error {
+	if IsDirExists(path) {
+		return nil
+	}
+	err := os.Mkdir(path, 0777)
+	return err
 }
 
 func (genCodeContext *GenCodeContext) Execute() error {

@@ -17,6 +17,7 @@ const InitDBTempl = `
     func InitDB() error {
         dbName = "{{.DatabaseName}}"
         dbURL = "{{.DatabaseURL}}"
+        collectionNames = map[string]string{}
         {{range $index, $modelMeta := .ModelMetas}}
         collectionNames["{{$modelMeta.Name}}"] = "{{$modelMeta.Name}}"
         {{end}}

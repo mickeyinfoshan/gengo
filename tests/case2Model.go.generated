@@ -40,9 +40,24 @@ func (auth *Auth) Delete() error {
 func (auth *Auth) Save() error {
     sess := NewDBSession()
     defer sess.Close()
-    info, err := sess.DB(dbName).C(collectionNames["Auth"]).Upsert(bson.M{"lid" : auth.Lid,"touid" : auth.Touid}, *auth)
-    if info.UpsertedId != nil {
-        auth.AuthID = info.UpsertedId.(bson.ObjectId)
-    }
+    collection := sess.DB(dbName).C(collectionNames["Auth"])
+	selectorBsonM := bson.M{"lid" : auth.Lid,"touid" : auth.Touid}
+	info, err := collection.Upsert(selectorBsonM, *auth)
+	if err == nil {
+		if info.UpsertedId != nil {
+			auth.AuthID = info.UpsertedId.(bson.ObjectId)
+		} else if auth.AuthID.Hex() == "" {
+			err = collection.Find(selectorBsonM).One(auth)
+		}
+	}
     return err
+}
+
+// GetAuthByID Get an instance from ID
+func GetAuthByID(id bson.ObjectId) (Auth, error) {
+    sess := NewDBSession()
+    defer sess.Close()
+    var auth Auth
+    err := sess.DB(dbName).C(collectionNames["Auth"]).Find(bson.M{"_id" : id}).One(&auth)
+    return auth, err
 }

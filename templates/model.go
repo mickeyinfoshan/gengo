@@ -24,11 +24,26 @@ func ({{$instance}} *{{.Name}}) Delete() error {
 func ({{$instance}} *{{.Name}}) Save() error {
     sess := NewDBSession()
     defer sess.Close()
-    info, err := sess.DB(dbName).C(collectionNames["{{.Name}}"]).Upsert({{.GenUpsertSelector}}, *{{$instance}})
-    if info.UpsertedId != nil {
-        {{$instance}}.{{$IDField.Name}} = info.UpsertedId.(bson.ObjectId)
-    }
+    collection := sess.DB(dbName).C(collectionNames["{{.Name}}"])
+	selectorBsonM := {{.GenUpsertSelector}}
+	info, err := collection.Upsert(selectorBsonM, *{{$instance}})
+	if err == nil {
+		if info.UpsertedId != nil {
+			{{$instance}}.{{$IDField.Name}} = info.UpsertedId.(bson.ObjectId)
+		} else if {{$instance}}.{{$IDField.Name}}.Hex() == "" {
+			err = collection.Find(selectorBsonM).One({{$instance}})
+		}
+	}
     return err
+}
+
+// Get{{.Name}}ByID Get an instance from ID
+func Get{{.Name}}ByID(id bson.ObjectId) ({{.Name}}, error) {
+    sess := NewDBSession()
+    defer sess.Close()
+    var {{$instance}} {{$.Name}}
+    err := sess.DB(dbName).C(collectionNames["{{$.Name}}"]).Find(bson.M{"_id" : id}).One(&{{$instance}})
+    return {{$instance}}, err
 } 
 `
 const ModelFileTmpl = `

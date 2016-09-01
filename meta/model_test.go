@@ -60,10 +60,10 @@ func TestModelMetaFromString(t *testing.T) {
 		testFileStr := string(testfileBytes)
 		modelMeta, e := ModelMetaFromString(testFileStr)
 		So(e, ShouldBeNil)
-		So(modelMeta.Name, ShouldEqual, "Auth")
+		So(modelMeta.Name, ShouldEqual, "AuthTest")
 		So(modelMeta.Type, ShouldEqual, "struct")
 		So(len(modelMeta.Fields), ShouldEqual, 11)
-		So(modelMeta.GetInstanceName(), ShouldEqual, "auth")
+		So(modelMeta.GetInstanceName(), ShouldEqual, "authTest")
 	})
 
 	Convey("测试解析器，没有ID属性", t, func() {

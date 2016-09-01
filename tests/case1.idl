@@ -1,4 +1,4 @@
-type Auth struct {
+type AuthTest struct {
 	Aid        bson.ObjectId `json:"aid" bson:"_id,omitempty"`
 	Fromuid    bson.ObjectId `json:"-" bson:"fromuid,omitempty"`
 	Touid      bson.ObjectId `json:"uid" bson:"touid,omitempty"`

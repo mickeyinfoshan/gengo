@@ -91,7 +91,7 @@ func readFiles(dir string) []meta.ModelMeta {
 
 func makeModelMeta(filename string) []meta.ModelMeta {
 	metas := []meta.ModelMeta{}
-	if !strings.HasSuffix(filename, ".go") {
+	if !strings.HasSuffix(filename, ".idl") {
 		return metas
 	}
 	data, e := ioutil.ReadFile(filename)
