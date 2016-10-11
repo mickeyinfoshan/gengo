@@ -5,8 +5,12 @@ const SelectorTmpl = `
 {{$modelMeta := .ModelMeta}}
 // model {{$modelMeta.Name}}'s Selector
 type {{$modelMeta.Name}}Selector struct {
-    {{range $index, $field := .OmitEmptyFields}}{{$field.Name}} {{$field.Type}}{{end}}
-    {{range $index, $field := .NoneOmitEmptyFields}}{{$field.Name}} {{$field.Type}}{{end}}
+    {{range $index, $field := .OmitEmptyFields}}
+    {{$field.Name}} {{$field.Type}}
+    {{end}}
+    {{range $index, $field := .NoneOmitEmptyFields}}
+    {{$field.Name}} {{$field.Type}}
+    {{end}}
 }
 
 // MakeBsonM generate a bson.M object from Selector
